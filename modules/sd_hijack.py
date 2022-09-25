@@ -330,19 +330,19 @@ class FrozenCLIPEmbedderWithCustomWords(torch.nn.Module):
                         remade_tokens.append(token)
                         multipliers.append(mult)
                     else:
-                        found = False
-                        for ids, word in possible_matches:
-                            if tokens[i:i+len(ids)] == ids:
-                                emb_len = int(self.hijack.word_embeddings[word].shape[0])
-                                fixes.append((len(remade_tokens), word))
-                                remade_tokens += [0] * emb_len
-                                multipliers += [mult] * emb_len
-                                i += len(ids) - 1
-                                found = True
-                                used_custom_terms.append((word, self.hijack.word_embeddings_checksums[word]))
-                                break
-
-                        if not found:
+                        matches = sorted(
+                            [(ids, word) for (ids, word) in possible_matches if tokens[i:i+len(ids)] == ids],
+                            reverse=True,
+                            key=lambda x: len(x[0]))
+                        if len(matches) > 0:
+                            ids, word = matches[0]
+                            emb_len = int(self.hijack.word_embeddings[word].shape[0])
+                            fixes.append((len(remade_tokens), word))
+                            remade_tokens += [0] * emb_len
+                            multipliers += [mult] * emb_len
+                            i += len(ids) - 1
+                            used_custom_terms.append((word, self.hijack.word_embeddings_checksums[word]))
+                        else:
                             remade_tokens.append(token)
                             multipliers.append(mult)
 
